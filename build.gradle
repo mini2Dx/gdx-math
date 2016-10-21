@@ -1,0 +1,171 @@
+import org.apache.tools.ant.filters.*
+
+buildscript {
+    repositories {
+    	mavenLocal()
+        mavenCentral()
+        maven { url 'https://github.com/steffenschaefer/gwt-gradle-plugin/raw/maven-repo/' }
+        jcenter()
+        maven { url 'https://plugins.gradle.org/m2/' }
+    }
+    dependencies {
+		classpath 'io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.5.3'
+    }
+}
+
+if(project.hasProperty('ossrhUser') && project.hasProperty("release")) {
+	apply plugin: "io.codearte.nexus-staging"
+
+	nexusStaging {
+		packageGroup = 'org.mini2Dx'
+		username = ossrhUser
+		password = ossrhPassword
+	}
+}
+
+apply plugin: "java"
+apply plugin: "signing"
+apply plugin: "maven"
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+}
+	
+group = 'org.mini2Dx'
+version = "$libgdxVersion"
+	
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+	
+dependencies {
+	compile "org.mini2Dx:gdx-collections:$libgdxVersion"
+}
+
+task cleanSrcDir(type: Delete) {
+	delete 'src/main/java/com'
+}
+clean.dependsOn cleanSrcDir
+
+File libGdxDirectory = file("libgdx");
+
+if(libGdxDirectory.exists()) {
+	task checkoutLibGdxMaster(type: Exec) {
+		workingDir './libgdx'
+		commandLine 'git', 'checkout', 'master'
+	}
+	
+	task pullLatestLibGdxMaster(type: Exec, dependsOn: checkoutLibGdxMaster) {
+		workingDir './libgdx'
+		commandLine 'git', 'pull', 'origin', 'master'
+	}
+
+	task fetchLatestLibGdxTags(type: Exec, dependsOn: pullLatestLibGdxMaster) {
+		workingDir './libgdx'
+		commandLine 'git', 'fetch', '--tags', 'origin', 'master'
+	}
+} else {
+	task fetchLatestLibGdxTags(type: Exec) {
+		commandLine 'git', 'clone', '--progress', 'https://github.com/libgdx/libgdx.git', 'libgdx'
+	}
+}
+
+task checkoutLibGdxTag(type: Exec, dependsOn: fetchLatestLibGdxTags) {
+	workingDir './libgdx'
+	commandLine 'git', 'checkout', "$libgdxVersion"
+}
+
+task copyLicenseFiles(type: Copy, dependsOn: checkoutLibGdxTag) {
+	from('libgdx') {
+		include 'LICENSE'
+	}
+	into './'
+}
+
+task copyMathClasses(type: Copy, dependsOn: copyLicenseFiles) {
+	from('libgdx/gdx/src/com/badlogic/gdx/math') {
+		include '**/*.java'
+		
+		filter { String line ->
+        	line.contains('com.badlogic.gdx.graphics') || 
+        		line.contains('com.badlogic.gdx.utils.Scaling') ||
+        		line.contains('com.badlogic.gdx.utils.StringBuilder') ? null : line
+    	}
+	}
+	into 'src/main/java/com/badlogic/gdx/math'
+}
+
+compileJava.dependsOn copyMathClasses
+
+if (JavaVersion.current().isJava8Compatible()) {
+	allprojects {
+		tasks.withType(Javadoc) {
+			options.addStringOption('Xdoclint:none', '-quiet')
+		}
+	}
+}
+
+task javadocJar(type: Jar) {
+	classifier = 'javadoc'
+	from javadoc
+}
+
+task sourcesJar(type: Jar) {
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
+
+artifacts {
+	archives javadocJar, sourcesJar
+}
+
+if(project.hasProperty('ossrhUser')) {
+	signing {
+		sign configurations.archives
+	}
+	
+	uploadArchives {
+		repositories {
+			mavenDeployer {
+				// POM signature
+				beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+				// Target repository
+				repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+					authentication(userName: ossrhUser, password: ossrhPassword)
+				}
+				pom.project {
+					name project.name
+					description project.description
+					packaging 'jar'
+					url 'https://github.com/mini2Dx/gdx-math'
+
+					scm {
+						connection 'scm:git:https://github.com/mini2Dx/gdx-math.git'
+						developerConnection 'scm:git:git@github.com:mini2Dx/gdx-math.git'
+						url 'https://github.com/mini2Dx/gdx-math.git'
+					}
+
+					licenses {
+						license {
+							name 'Apache License, Version 2.0'
+							url 'https://opensource.org/licenses/Apache-2.0'
+							distribution 'repo'
+						}
+					}
+
+					developers {
+						developer {
+							id = 'tomcashman'
+							name = 'Thomas Cashman'
+							email = 'thomascashman404@gmail.com'
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.14.1'
+}
