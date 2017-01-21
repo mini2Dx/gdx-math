@@ -43,7 +43,7 @@ dependencies {
 }
 
 task cleanSrcDir(type: Delete) {
-	delete 'src/main/java/com'
+	delete 'src/main/java/org'
 }
 clean.dependsOn cleanSrcDir
 
@@ -89,10 +89,12 @@ task copyMathClasses(type: Copy, dependsOn: copyLicenseFiles) {
 		filter { String line ->
         	line.contains('com.badlogic.gdx.graphics') || 
         		line.contains('com.badlogic.gdx.utils.Scaling') ||
-        		line.contains('com.badlogic.gdx.utils.StringBuilder') ? null : line
+        		line.contains('com.badlogic.gdx.utils.StringBuilder') ? null : (
+					line.contains('com.badlogic.gdx') ? line.replace('com.badlogic.gdx', 'org.mini2Dx.gdx') : line
+				)
     	}
 	}
-	into 'src/main/java/com/badlogic/gdx/math'
+	into 'src/main/java/org/mini2Dx/gdx/math'
 }
 
 compileJava.dependsOn copyMathClasses
