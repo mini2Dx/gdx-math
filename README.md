@@ -11,6 +11,8 @@ The gradle build will checkout a specific version of libgdx, copy the math sourc
 compile "org.mini2Dx:gdx-math:1.9.5"
 ```
 
+This project's only dependency is [gdx-collections](https://github.com/mini2Dx/gdx-collections).
+
 ## Included Classes
 
 The entire _com.badlogic.gdx.math_ package is included
