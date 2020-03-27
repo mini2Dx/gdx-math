@@ -11,7 +11,7 @@ Usage
 ----------------------
 
 ```gradle
-compile "org.mini2Dx:gdx-math:1.9.8"
+compile "org.mini2Dx:gdx-math:1.9.10"
 ```
 
 This project's only dependency is [gdx-collections](https://github.com/mini2Dx/gdx-collections).
