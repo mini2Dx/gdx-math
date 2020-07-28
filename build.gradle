@@ -30,13 +30,14 @@ apply plugin: "maven"
 repositories {
 	mavenLocal()
 	mavenCentral()
+	maven { url "https://oss.sonatype.org/service/local/staging/deploy/maven2/" }
 }
 	
 group = 'org.mini2Dx'
 version = "$libgdxVersion"
 	
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 	
 dependencies {
 	compile "org.mini2Dx:gdx-collections:$libgdxVersion"
@@ -72,7 +73,7 @@ if(libGdxDirectory.exists()) {
 
 task checkoutLibGdxTag(type: Exec, dependsOn: fetchLatestLibGdxTags) {
 	workingDir './libgdx'
-	commandLine 'git', 'checkout', "$libgdxVersion"
+	commandLine 'git', 'checkout', "gdx-parent-$libgdxVersion"
 }
 
 task copyLicenseFiles(type: Copy, dependsOn: checkoutLibGdxTag) {
