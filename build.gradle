@@ -30,7 +30,7 @@ apply plugin: "maven"
 repositories {
 	mavenLocal()
 	mavenCentral()
-	maven { url "https://oss.sonatype.org/service/local/staging/deploy/maven2/" }
+	maven { url "https://oss.sonatype.org/content/repositories/releases/" }
 }
 	
 group = 'org.mini2Dx'
